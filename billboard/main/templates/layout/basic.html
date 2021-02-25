@@ -11,21 +11,18 @@
     <title>{% block title %}Главная{% endblock %} - Доска объявлений</title>
     {% bootstrap_css %}
     <!-- Наши стили static/main/style.css -->
-    <link rel="stylesheet" href="{% static 'main/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'main/style.css' %}">
     {% bootstrap_javascript jquery='slim' %}
 </head>
 <!-- container-fluid говррит о том, что верстка будет испольщовать bootstrap -->
 <body class="container-fluid">
     <header class="mb-4">
-        <h1 class="display-1 text-center">Объявления</h1>
+        <h1 class="display-1 text-center">Доска объявлений</h1>
     </header>
     <!-- Табличная верстка -->
     <div class="row">
         <!-- Горизонтальная навигация -->
         <ul class="col nav justify-content-end border">
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'main:register' %}">Регистрация</a>
-            </li>
             <!-- Раскрывающиеся меню (если выполнен вход) -->
             {% if user.is_authenticated %}
             <li class="nav-item dropdown">
@@ -43,10 +40,13 @@
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{% url 'main:logout' %}">Выйти</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{% url 'main:profile_delete' %}">Удалить</a>
+                    <a class="dropdown-item" href="{% url 'main:profile_delete' %}">Удалить аккаунт</a>
                 </div>
             </li>
             {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'main:register' %}">Регистрация</a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'main:login'%}">Вход</a>
             </li>
@@ -70,12 +70,6 @@
                 {{ rubric.name }}
             </a>
             {% endfor %}
-            <a class="nav-link" href="#">Жилье</a>
-            <a class="nav-link" href="#">Склады</a>
-            <a class="nav-link" href="#">Гаражи</a>
-            <span class="nav-link root font-weight-bold">Транспорт</span>
-            <a class="nav-link" href="#">Легковой</a>
-            <a class="nav-link" href="#">Грузовой</a>
             <!-- Ссылка на приожение main:other, передаем в приложение параметр page='about' -->
             <a class="nav-link root" href="{% url 'main:other' page='about' %}">О сайте</a>
         </nav>

@@ -1,0 +1,45 @@
+{% extends "layout/basic.html" %}
+
+{% load thumbnail %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block title %}{{ poster.title }} - {{ poster.rubric.name }}{% endblock %}
+
+{% block content %}
+<!-- Название, Описание, Цена, Контакты, Дата, Иллюстрация-->
+<div class="container-fluid mt-3">
+    <div class="row">
+        {% if poster.image %}
+        <div class="col-md-auto">
+            <img class="main-image" src="{{ poster.image.url }}">
+        </div>
+        {% endif %}
+        <div class="col">
+            <h2>{{ poster.title }}</h2>
+            <p>{{ poster.content }}</p>
+            <p class="font-weight-bold">{{ poster.price }}</p>
+            <p>{{ poster.contacts }}</p>
+            <p class="text-right font-italic"> Объявление добавлено {{ poster.created_at }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Допольнительные иллюстрации-->
+{% if ais %}
+<!--
+    d-flex - гибкая разметка (дочерние эл-ы выстраиваются внутри родительского по горизонтали)
+    justify-content-between - доп иллюстрации располагаются внутри родителя
+    flex-wrap - Если не хватит места, не помещающиеся элементы бдуут перенесены на следующую строку
+-->
+<div class="d-flex justify-content-between flex-wrap mt-5">
+    {% for ai in ais%}
+    <div>
+        <img class="additional-image" src="{{ ai.image.url }}">
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<p><a href="{% url 'main:by_rubric' pk=poster.rubric.pk %}{{ all }}">Назад</a></p>
+{% endblock %}

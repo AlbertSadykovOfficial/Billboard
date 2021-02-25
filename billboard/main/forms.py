@@ -4,6 +4,14 @@ from .models import AdvUser
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 
+# Формы добавления, удаления и правки объявлений
+from django.forms import inlineformset_factory
+from .models import Poster, AdditionalImage
+
+# Формы добавления, комментариев
+from captcha.fields import CaptchaField
+from .models import Comment
+
 from .models import user_registrated
 
 from .models import SuperRubric, SubRubric
@@ -71,7 +79,7 @@ class RegisterUserForm(forms.ModelForm):
                   'first_name', 'last_name', 'send_messages')
 
 
-# Ajhvf
+# Форма
 # Для работы с подрубриками, поле надрубркии - обязательно
 class SubRubricForm(forms.ModelForm):
     super_rubric = forms.ModelChoiceField(
@@ -86,3 +94,35 @@ class SubRubricForm(forms.ModelForm):
         model = SubRubric
         fields = '__all__'
 
+#
+class SearchForm(forms.Form):
+    keyword = forms.CharField(required=False, max_length=20, label='')
+
+
+# Формы добавления, удаления и правки объявлений
+# В форме выводим все поля модели Poster
+# Поле author спрячем, значение туда занесется автоматически
+class PosterForm(forms.ModelForm):
+    class Meta:
+        model = Poster
+        fields = '__all__'
+        widgets = {'author': forms.HiddenInput}
+
+# Набор форм
+AIFormSet = inlineformset_factory(Poster, AdditionalImage, fields='__all__')
+
+
+class UserCommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        # Делаем так, чтобы комментарий всегда выводился на странце
+        exclude = ('is_active',)
+        widgets = {'poster': forms.HiddenInput}
+
+class GuestCommentForm(forms.ModelForm):
+    captcha = CaptchaField(label='Введите текст с картинке',
+                           error_messages={'invalid': 'Неправильный текст'})
+    class Meta:
+        model = Comment
+        exclude = ('is_active',)
+        widgets = {'poster': forms.HiddenInput}

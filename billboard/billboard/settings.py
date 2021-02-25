@@ -27,7 +27,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 # Добавляем приложение
     'main.apps.MainConfig',
-    'bootstrap4'
+    'bootstrap4',
+    'django_cleanup',
+    'easy_thumbnails',
+    'captcha',
+# REST_API
+    'rest_framework',
+    'corsheaders',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -38,6 +45,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+# REST_API
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'billboard.urls'
@@ -111,3 +120,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Натсрока каталога хранния выгруженных файлов
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+# Настройка мниатюр
+THUMBNAIL_ALIASES = {
+    '':{
+        'default': {
+                    'size': (96, 96),
+                    'crop': 'scale'
+                    },
+        },
+}
+THUMBNAIL_BASEDIR = 'thumbnails'
+
+# REST_API
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_URLS_REGEX = r'^/api/.*$'

@@ -5,6 +5,13 @@ from django.contrib.auth.models import AbstractUser
 from django.dispatch import Signal
 from .utilities import send_activation_notification
 
+# Для модели Poster
+from .utilities import get_timestamp_path
+
+# Сигнал для комменатриев
+from django.db.models.signals import post_save
+from .utilities import send_new_comment_notification
+
 # Не забыть добавить в settings.py
 # AUTH_USER_MODEL = 'main.AdvUser'
 #
@@ -13,12 +20,19 @@ from .utilities import send_activation_notification
 # python manage.py migrate
 class AdvUser(AbstractUser):
     # Прошел ли пользователь процедурур активации
-    is_active = models.BooleanField(default=True,
+    is_activated = models.BooleanField(default=True,
                                     db_index=True,
                                     verbose_name='Прошел активацию?')
     # Желает ли пользователь получать уведомления
     send_messages = models.BooleanField(default=True,
                                         verbose_name='Отправлять оповещения о новых комментариях?')
+
+    # Явное удлаение объявлений при удалении пользователя
+    # Может не будет работать
+    def delete(self, *args, **kwargs):
+        for poster in self.poster_set.all():
+            poster.delete()
+        super().delete(*args, **kwargs)
 
     class Meta(AbstractUser.Meta):
         pass
@@ -83,3 +97,67 @@ def user_registration_dispatcher(sender, **kwargs):
     send_activation_notification(kwargs['instance'])
 
 user_registrated.connect(user_registration_dispatcher)
+
+
+class Poster(models.Model):
+    rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, verbose_name='Рубрика')
+    title = models.CharField(max_length=40, verbose_name='Товар')
+    content = models.TextField(verbose_name='Описание')
+    price = models.FloatField(default=0, verbose_name='Цена')
+    contacts = models.TextField(verbose_name='Контакты')
+    image = models.ImageField(blank=True, upload_to=get_timestamp_path, verbose_name='Изображение')
+    author = models.ForeignKey(AdvUser, on_delete=models.CASCADE, verbose_name='Автор объявления')
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name='Выводить в списке?')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Опубликовано')
+
+    # Переопределяем delete, т.к.:
+    # Перед удалением записи,
+    # Мы дполонительно удаляем все связанные картинки
+    # При вызове метода, возникает сигнаг post_delete
+    # (обр. django_cleanup), который удлить все файлы
+    def delete(self, *args, **kwargs):
+        for ai in self.additionalimage_set.all():
+            ai.delete()
+        super().delete(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Объявление'
+        verbose_name_plural = 'Объявления'
+        ordering = ['-created_at']
+
+# Модель дополнительных иллюстраций
+class AdditionalImage(models.Model):
+    # Прикрепление к модели
+    # Чтобы удалятсья при ее удалении
+    # НО НЕ РАБОТАЕТ, миниатюры НЕ удлаюятся
+    poster = models.ForeignKey(Poster, on_delete=models.CASCADE, verbose_name='Объявление')
+    image = models.ImageField(upload_to=get_timestamp_path, verbose_name='Изображение')
+
+    class Meta:
+        verbose_name = 'Дополнительная иллюстрация'
+        verbose_name_plural = 'Дополнительные иллюстрации'
+
+class Comment(models.Model):
+    poster = models.ForeignKey(Poster, on_delete=models.CASCADE, verbose_name='Объявление')
+    author = models.CharField(max_length=30, verbose_name='Автор')
+    content = models.TextField(verbose_name='Содержание')
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name='Выводить на экран?')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Опубликован')
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+        # Сортировка по увеличению даты и времени
+        # Старые - в начале, новые - в конце
+        ordering = ['created_at']
+
+"""
+!!!! НЕ РАБОТАЕТ
+# Привязываем сигнал к обработчику после добавления комменария
+def post_save_dispatcher(sender, **kwargs):
+    author = kwargs['instance'].poster.author
+    # Проверяем не запретил ли пользователь отправку оповещений
+    if kwargs['created'] and author.send_messages:
+        send_new_comment_notification(kwargs['instance'])
+post_save.connect(post_save_dispatcher, sender=Comment)
+"""

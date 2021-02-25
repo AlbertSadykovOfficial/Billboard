@@ -8,6 +8,9 @@ import datetime
 from .models import SuperRubric, SubRubric
 from .forms import SubRubricForm
 
+# Администрирование объявлений
+from .models import Poster, AdditionalImage
+
 # Регистрируем модель пользователя
 #admin.site.register(AdvUser)
 
@@ -16,6 +19,12 @@ from .forms import SubRubricForm
 # (НЕ РАБОТАЕТ)
 
 #  Рассылка пользователямписем с предписанием выполнить активацию
+# НЕ РАБОТАЕТ
+# МОЖЕТ БУДЕТ РАБОТАТЬ НА НАСТОЯЩЕМ СЕРВЕРЕ
+# Тут, наверное, все упирается в localhost
+# Пользователь не может получить письмо
+# и перейти по ссылке, которая подтвердит регистрацию
+# Поэтому в БД приходится вручную уставнавливать is_active = 1
 def send_activation_notifications(modeladmin, request, queryset):
     for rec in queryset:
         if not rec.is_activated:
@@ -42,14 +51,14 @@ class NonactivatedFilter(admin.SimpleListFilter):
             return queryset.filter(is_active=True, is_activated=True)
         if val == 'threedays':
             d = datetime.date.today() - datetime.timedelta(days=3)
-            return queryset.filter(is_active=False, is_activated=False, date_joined_date_lt=d)
+            return queryset.filter(is_active=False, is_activated=False, date_joined__date__lt=d)
         if val == 'week':
             d = datetime.date.today() - datetime.timedelta(weeks=1)
-            return queryset.filter(is_active=False, is_activated=False, date_joined_date_lt=d)
+            return queryset.filter(is_active=False, is_activated=False, date_joined__date__lt=d)
 
 class AdvUserAdmin(admin.ModelAdmin):
     # Вы одим строковое предствалени записи (имя пользователя как в AbstractUser)
-    list_display = ('__str__', 'is_active', 'date_joined')
+    list_display = ('__str__', 'is_activated', 'date_joined')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     list_filter = (NonactivatedFilter,)
     fields = (('username', 'email'), ('first_name', 'last_name'),
@@ -81,3 +90,19 @@ class SubRubricAdmin(admin.ModelAdmin):
     form = SubRubricForm
 
 admin.site.register(SubRubric, SubRubricAdmin)
+
+# Инструменты администрирования объявлений
+
+# Работа с дополнительными иллюстрациями
+class AdditionalImageInline(admin.TabularInline):
+    model = AdditionalImage
+
+# Редактор объявления
+class PosterAdmin(admin.ModelAdmin):
+    list_display = ('rubric', 'title', 'content', 'author', 'created_at')
+    # Выводим ('rubric', 'author') в 1 строку (для компактности)
+    fields = (('rubric', 'author'), 'title', 'content', 'price',
+              'contacts', 'image', 'is_active')
+    inlines = (AdditionalImageInline,)
+
+admin.site.register(Poster, PosterAdmin)

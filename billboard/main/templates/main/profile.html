@@ -1,5 +1,9 @@
 {% extends "layout/basic.html" %}
 
+{% load thumbnail %}
+{% load static %}
+<!--{% load bootstrap4 %} -->
+
 {% block title %}Профиль пользователя{% endblock %}
 
 {% block content %}
@@ -11,4 +15,42 @@
 <p>Здравствуйте!</p>
 {% endif %}
 <h3>Ваши объявления</h3>
+<p><a href="{% url 'main:profile_poster_add'%}">Добавить Объявления</a></p>
+{% if posters %}
+<ul class="list-unstyled">
+    {% for poster in posters %}
+    <!---
+      my-5 - Широкие отступы сверху и снизу
+      p-3  - Внутренние отступы среднего размера со всех сторон
+    --->
+    <li class="media my-5 p-3 border">
+        <!--
+            Чтобы не генерирвоать интрнет-адрес для ссылок 2 раза, сохраняем его в url
+            pk=poster.pk as url
+
+            all получаем из контекста шаблона, полученного из кода by_rubric
+        -->
+        {% url 'main:detail' rubric_pk=poster.rubric_id pk=poster.pk as url %}
+        <a href="{{ url }}{{ all }}">
+            {% if poster.image %}
+            <img class="mr-3" src="{% thumbnail poster.image 'default' %}">
+            {% else %}
+            <img class="mr-3" src="{% static 'main/empty.png' %}">
+            {% endif %}
+        </a>
+        <div class="media-body">
+            <h3><a href="{{ url }}{{ all }}">{{ poster.title }}</a></h3>
+            <div>{{ poster.content }}</div>
+            <p class="text-right font-weight-bold">{{ poster.price }} руб.</p>
+            <p class="text-right font-italic">{{ poster.created_at }}</p>
+            <p class="text-right mt-2">
+                <a href="{% url 'main:profile_poster_change' pk=poster.pk %}">Исправить</a>
+                <a href="{% url 'main:profile_poster_delete' pk=poster.pk %}">Удалить</a>
+            </p>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
 {% endblock %}
